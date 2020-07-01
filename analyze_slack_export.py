@@ -50,8 +50,7 @@ def import_channel_data(channel_filename, type, channel_dict):
                     errors += "ERROR! : Found channels '{}' with duplicate name in json file {} : {}/{}\n".format(channel_name, channel_filename, channel_dict[channel_name], channel_id)
             else:
                 channel_dict[channel_name] = channel_id
-                channel_count += 1
-
+            channel_count += 1
             # print( "DEBUG: json id: '{}' | channel name: '{}'".format(channel_id, channel_name) )
 
     f.close()
@@ -116,6 +115,44 @@ print("\nZip file file frequency analysis...")
 for key, value in sorted(file_count_freq.items()):
     print( "# of files {} : {} folders (with that many files)".format(key, value))
 print("\n")
+
+
+# Second - let's check that every file in each of the conversation JSON files has a matching folder in the ZIP file...
+# PRIVATE channels...
+matching = 0
+for key in slack_private_channels:
+    if(key in files):
+        matching += 1
+    else:
+        errors += "ERROR! Private channel has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} private channels had a matching folder in the ZIP file.\n".format(matching, len(slack_private_channels)))
+
+# PUBLIC channels...
+matching = 0
+for key in slack_public_channels:
+    if(key in files):
+        matching += 1
+    else:
+        errors += "ERROR! Public channel has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} public channels had a matching folder in the ZIP file.\n".format(matching, len(slack_public_channels)))
+
+# DMs...
+matching = 0
+for key in slack_dm_channels:
+    if(key in files):
+        matching += 1
+    else:
+        errors += "ERROR! DM has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} DMs had a matching folder in the ZIP file.\n".format(matching, len(slack_dm_channels)))
+
+# MPIMs...
+matching = 0
+for key in slack_mpims_channels:
+    if(key in files):
+        matching += 1
+    else:
+        errors += "ERROR! MPIM channel has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} MPIM channels had a matching folder in the ZIP file.\n".format(matching, len(slack_mpims_channels)))
 
 
 
