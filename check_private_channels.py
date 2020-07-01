@@ -9,9 +9,63 @@ slack_publicchannels_meta_file  = 'channels.json'
 slack_dms_meta_file             = 'dms.json'
 slack_export_filelist           = 'filelist.txt'
 
-slack_channels = {}     # The slack channels expected from the meta json file
-files = {}              # The actual folders and count of files per folder found in the zip archive
-errors = ''             # We'll store all errors and print them at the end
+# Global variables, because who doesn't love a good global variable?...
+slack_private_channels = {}     # The slack private channels expected from the meta json file
+slack_public_channels = {}      # The slack public channels expected from the meta json file
+slack_dm_channels = {}          # The DMs expected from the meta json file
+files = {}                      # The actual folders and count of files per folder found in the zip archive
+errors = ''                     # We'll store all errors and print them at the end
+
+
+
+#######################################################################
+# Read the Slack JSON meta data into a dict...
+#
+# channel_filename : path to a JSON file of Slack channel or DM data
+# type : public | private | dm - because the channel JSON uses different keys for DMs
+# channel_dict : reference to a dict that will store the channel names and IDs read from the file
+#
+def import_channel_data(channel_filename, type, channel_dict):
+    # open the passed in filename...
+    f = open(channel_filename, 'r', encoding='utf-8')
+    json_data = json.loads(f.read())
+
+    channel_count = 0
+
+    # Iterate over the JSON objects, and grab the names and channel IDs...
+    for list_item in json_data:
+        for key, value in list_item.items():
+            channel_id   = list_item['id']
+            if( type == 'dm' ):
+                # DMs do not have a name in the json file...
+                channel_name = channel_id
+            else:
+                channel_name = list_item['name']
+            if(channel_name in channel_dict):
+                if(channel_dict[channel_name] != channel_id):
+                    # We've found channels with duplicate names, but NOT duplicate IDs...
+                    errors += "ERROR! : Found channels '{}' with duplicate name in json file {}".format(channel_name, channel_filename)
+            else:
+                channel_dict[channel_name] = channel_id
+                channel_count += 1
+
+            # print( "DEBUG: json id: '{}' | channel name: '{}'".format(channel_id, channel_name) )
+
+    f.close()
+
+    # Return the number of channels discovered (and the populated dict, by reference)...
+    return channel_count
+
+
+
+#######################################################################
+# Read data from each of the JSON meta files into dicts...
+#
+private_channel_count = import_channel_data(slack_privatechannels_meta_file, 'private', slack_private_channels)
+public_channel_count  = import_channel_data(slack_publicchannels_meta_file, 'public', slack_public_channels)
+dm_count = import_channel_data(slack_dms_meta_file, 'dm', slack_dm_channels)
+
+
 
 
 #######################################################################
@@ -47,31 +101,17 @@ f.close()
 
 
 #######################################################################
-# Read the channels from the json file into a dict...
-#
-f = open(slack_privatechannels_meta_file, 'r', encoding='utf-8')
-json_data = json.loads(f.read())
-
-channel_count = 0
-
-for list_item in json_data:
-    for key, value in list_item.items():
-        channel_id   = list_item['id']
-        channel_name = list_item['name']
-        if(channel_name in slack_channels):
-            if(slack_channels[channel_name] != channel_id):
-                # We've found channels with duplicate names, but NOT duplicate IDs...
-                errors += "ERROR! : Found channels '{}' with duplicate name in json file {} : {}".format(channel_name, slack_channel_meta_file)
-        else:
-            slack_channels[channel_name] = channel_id
-            channel_count += 1
-
-        # print( "DEBUG: json id: '{}' | channel name: '{}'".format(channel_id, channel_name) )
-
-
-#######################################################################
 # Print some useful output...
 #
 print(errors)
 print("INFO: from file list: Found {} folders and files dict has {} folders (these numbers should match!)".format(folder_count, len(files)))
-print("INFO: from json meta: Index contains {} channels, of {} channels found (should match the number of folders in file list.)".format(len(slack_channels), channel_count))
+print("INFO: from json meta: Private channels contains {} channels, of {} channels found.".format(len(slack_private_channels), private_channel_count))
+print("INFO: from json meta: Public channels contains {} channels, of {} channels found.".format(len(slack_public_channels), public_channel_count))
+print("INFO: from json meta: DMs contains {} channels, of {} channels found.".format(len(slack_dm_channels), dm_count))
+total_channel_meta_count = private_channel_count + public_channel_count + dm_count
+if( total_channel_meta_count == folder_count ):
+    print("--> total files (from zipfile): {}  |  total channels (from JSON files): {} (they match!)".format(folder_count, total_channel_meta_count))
+else:
+    print("--> total files (from zipfile): {}  |  total channels (from JSON files): {} (ERROR! These numbers should match)".format(folder_count, total_channel_meta_count))
+
+exit()
