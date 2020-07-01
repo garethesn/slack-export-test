@@ -28,6 +28,7 @@ errors = ''                     # We'll store all errors and print them at the e
 # channel_dict : reference to a dict that will store the channel names and IDs read from the file
 #
 def import_channel_data(channel_filename, type, channel_dict):
+    global errors
     # open the passed in filename...
     f = open(channel_filename, 'r', encoding='utf-8')
     json_data = json.loads(f.read())
@@ -46,7 +47,7 @@ def import_channel_data(channel_filename, type, channel_dict):
             if(channel_name in channel_dict):
                 if(channel_dict[channel_name] != channel_id):
                     # We've found channels with duplicate names, but NOT duplicate IDs...
-                    errors += "ERROR! : Found channels '{}' with duplicate name in json file {}".format(channel_name, channel_filename)
+                    errors += "ERROR! : Found channels '{}' with duplicate name in json file {} : {}/{}\n".format(channel_name, channel_filename, channel_dict[channel_name], channel_id)
             else:
                 channel_dict[channel_name] = channel_id
                 channel_count += 1
@@ -73,7 +74,7 @@ mpim_channel_count = import_channel_data(slack_mpims_meta_file, 'mpim', slack_mp
 #######################################################################
 # Read the folders and count of files in folders into a dict...
 #
-f = open(slack_export_filelist, 'r', encoding='iso8859')
+f = open(slack_export_filelist, 'r', encoding='utf-8')
 
 folder_count = 0
 files_count = 0
@@ -97,8 +98,24 @@ for line in f:
         files_count += 1
     else:
         # Likely a bare file. Add it to errors string, so we can validate...
-        errors += "INFO: Found bare file (in root directory of zip): '{}'\n".format(line)
+        errors += "INFO: Found bare file (in root directory of zip file): '{}'\n".format(line)
 f.close()
+
+
+#######################################################################
+# Do some analysis
+#
+# First - do all the zip file folders have content in them?
+file_count_freq = {}
+for key in files:
+    if(files[key] in file_count_freq):
+        file_count_freq[files[key]] += 1
+    else:
+        file_count_freq[files[key]] = 1
+print("\nZip file file frequency analysis...")
+for key, value in sorted(file_count_freq.items()):
+    print( "# of files {} : {} folders (with that many files)".format(key, value))
+print("\n")
 
 
 
@@ -113,9 +130,9 @@ print("INFO: from json meta: MPIM channels indexed {} channels, with {} channels
 print("INFO: from json meta: DMs indexed {} channels, of {} channels found.".format(len(slack_dm_channels), dm_count))
 total_channel_meta_count = private_channel_count + public_channel_count + dm_count
 if( total_channel_meta_count == folder_count ):
-    print("--> total files (from zipfile): {}  |  total channels (from JSON files): {} (they match!)".format(folder_count, total_channel_meta_count))
+    print("--> total folders (from zipfile): {}  |  total channels (from JSON files): {} (they match!)".format(folder_count, total_channel_meta_count))
 else:
-    print("--> total files (from zipfile): {}  |  total channels (from JSON files): {} (ERROR! These numbers should match)".format(folder_count, total_channel_meta_count))
+    print("--> total folders (from zipfile): {}  |  total channels (from JSON files): {} (ERROR! These numbers should match)".format(folder_count, total_channel_meta_count))
     if( folder_count > total_channel_meta_count ):
         print("--> ZIP file has an additional {} folders I cannot account for.".format(folder_count - total_channel_meta_count))
     else:
