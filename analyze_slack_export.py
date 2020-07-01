@@ -7,12 +7,14 @@ import json
 slack_privatechannels_meta_file = 'groups.json'
 slack_publicchannels_meta_file  = 'channels.json'
 slack_dms_meta_file             = 'dms.json'
+slack_mpims_meta_file           = 'mpims.json'
 slack_export_filelist           = 'filelist.txt'
 
 # Global variables, because who doesn't love a good global variable?...
 slack_private_channels = {}     # The slack private channels expected from the meta json file
 slack_public_channels = {}      # The slack public channels expected from the meta json file
 slack_dm_channels = {}          # The DMs expected from the meta json file
+slack_mpims_channels = {}       # The MPIMs (Multi-Party IMs???) from the meta json file
 files = {}                      # The actual folders and count of files per folder found in the zip archive
 errors = ''                     # We'll store all errors and print them at the end
 
@@ -22,7 +24,7 @@ errors = ''                     # We'll store all errors and print them at the e
 # Read the Slack JSON meta data into a dict...
 #
 # channel_filename : path to a JSON file of Slack channel or DM data
-# type : public | private | dm - because the channel JSON uses different keys for DMs
+# type : public | private | mpim | dm - because the channel JSON uses different keys for DMs
 # channel_dict : reference to a dict that will store the channel names and IDs read from the file
 #
 def import_channel_data(channel_filename, type, channel_dict):
@@ -64,7 +66,7 @@ def import_channel_data(channel_filename, type, channel_dict):
 private_channel_count = import_channel_data(slack_privatechannels_meta_file, 'private', slack_private_channels)
 public_channel_count  = import_channel_data(slack_publicchannels_meta_file, 'public', slack_public_channels)
 dm_count = import_channel_data(slack_dms_meta_file, 'dm', slack_dm_channels)
-
+mpim_channel_count = import_channel_data(slack_mpims_meta_file, 'mpim', slack_mpims_channels)
 
 
 
@@ -105,13 +107,18 @@ f.close()
 #
 print(errors)
 print("INFO: from file list: Found {} folders and files dict has {} folders (these numbers should match!)".format(folder_count, len(files)))
-print("INFO: from json meta: Private channels contains {} channels, of {} channels found.".format(len(slack_private_channels), private_channel_count))
-print("INFO: from json meta: Public channels contains {} channels, of {} channels found.".format(len(slack_public_channels), public_channel_count))
-print("INFO: from json meta: DMs contains {} channels, of {} channels found.".format(len(slack_dm_channels), dm_count))
+print("INFO: from json meta: Private channels indexed {} channels, of {} channels found.".format(len(slack_private_channels), private_channel_count))
+print("INFO: from json meta: Public channels indexed {} channels, of {} channels found.".format(len(slack_public_channels), public_channel_count))
+print("INFO: from json meta: MPIM channels indexed {} channels, with {} channels found.".format(len(slack_mpims_channels), mpim_channel_count))
+print("INFO: from json meta: DMs indexed {} channels, of {} channels found.".format(len(slack_dm_channels), dm_count))
 total_channel_meta_count = private_channel_count + public_channel_count + dm_count
 if( total_channel_meta_count == folder_count ):
     print("--> total files (from zipfile): {}  |  total channels (from JSON files): {} (they match!)".format(folder_count, total_channel_meta_count))
 else:
     print("--> total files (from zipfile): {}  |  total channels (from JSON files): {} (ERROR! These numbers should match)".format(folder_count, total_channel_meta_count))
+    if( folder_count > total_channel_meta_count ):
+        print("--> ZIP file has an additional {} folders I cannot account for.".format(folder_count - total_channel_meta_count))
+    else:
+        print("--> META files have an additional {} channels that have no matching folders in the ZIP file.".format(total_channel_meta_count - folder_count))
 
 exit()

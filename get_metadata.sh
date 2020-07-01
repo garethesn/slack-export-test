@@ -12,7 +12,7 @@ ZIPFILE='exported_file_from_slack.zip'
 #   mpims.json
 
 # Extract the key json files with meta data...
-for i in 'groups.json' 'channels.json' 'dms.json'
+for i in 'groups.json' 'channels.json' 'dms.json' 'mpims.json'
 do
   echo -n "Extracting ${i} from ${ZIPFILE}..."
   unzip -p "${ZIPFILE}" "${i}" > "${i}"
