@@ -47,7 +47,7 @@ def import_channel_data(channel_filename, type, channel_dict):
             if(channel_name in channel_dict):
                 if(channel_dict[channel_name] != channel_id):
                     # We've found channels with duplicate names, but NOT duplicate IDs...
-                    errors += "ERROR! : Found channels '{}' with duplicate name in json file {} : {}/{}\n".format(channel_name, channel_filename, channel_dict[channel_name], channel_id)
+                    errors += "ERROR: Found channels '{}' with duplicate name in json file {} : {}/{}\n".format(channel_name, channel_filename, channel_dict[channel_name], channel_id)
                     #TODO: Increment channel count by one (rather than 8) - probably by parsing the JSON better.
             else:
                 channel_dict[channel_name] = channel_id
