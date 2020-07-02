@@ -5,10 +5,9 @@ Specifically, this set of tools attempts to heuristically validate that a Slack 
 
 
 ## Usage
-1. Export from Slack, using the export utility, and download the generated ZIP file
-1. Edit `get_metadata.sh` and insert the name of your ZIP file.
-1. Run `bash get_metadata.sh` This will extract the JSON metadata files and output a list of all the files and folders in the ZIP archive. The next script will use only these generated files for analysis.
-1. Run `python3 analyze_slack_export.py` and interpret the results.
+1. Export from Slack, using the export utility, and download the generated ZIP file. I recommend you put it in a folder on its own, since the next step will generate meta files in the same folder.
+1. Run `bash get_metadata.sh <filename.zip>` This will extract the JSON metadata files and output a list of all the files and folders in the ZIP archive. The next script will use only these generated files for analysis. Note that this calls `list_zipfile_contents.py` so please edit the .sh file to correctly point at it on your filesystem.
+1. Run `python3 analyze_slack_export.py` and interpret the results. Depending on the size of your export, you can capture the output easily by doing something like `python3 analyze_slack_export.py | tee -a analytics.txt` and view the analytics.txt file with an editor of your choice.
 
 
 ## A note on privacy
