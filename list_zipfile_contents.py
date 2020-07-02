@@ -8,12 +8,18 @@ import sys
 ZIPFILE = 'exported_file_from_slack.zip'
 filelist_filename = 'filelist.txt'
 
+# Check to see if a zip file has been passed as an argument, overriding ZIPFILE...
+if len(sys.argv) > 1:
+    export_filename = sys.argv[1]
+else:
+    export_filename = ZIPFILE
+
 filelist = ''
 file_count = 0
 
 f = open(filelist_filename, 'w')
 
-z = zipfile.ZipFile(ZIPFILE)
+z = zipfile.ZipFile(export_filename)
 for file in z.namelist():
     filelist += u"{}\n".format(file)
     file_count += 1
