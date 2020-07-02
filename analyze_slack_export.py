@@ -48,9 +48,10 @@ def import_channel_data(channel_filename, type, channel_dict):
                 if(channel_dict[channel_name] != channel_id):
                     # We've found channels with duplicate names, but NOT duplicate IDs...
                     errors += "ERROR! : Found channels '{}' with duplicate name in json file {} : {}/{}\n".format(channel_name, channel_filename, channel_dict[channel_name], channel_id)
+                    #TODO: Increment channel count by one (rather than 8) - probably by parsing the JSON better.
             else:
                 channel_dict[channel_name] = channel_id
-            channel_count += 1
+                channel_count += 1
             # print( "DEBUG: json id: '{}' | channel name: '{}'".format(channel_id, channel_name) )
 
     f.close()
@@ -84,7 +85,7 @@ for line in f:
         # This is a folder since it ends in a slash...
         folder_name = line[:-1]     # Strip the trailing slash
         if(folder_name in files):
-            errors += "ERROR! : Duplicate folder '{}' found in zip file.\n".format(folder_name)
+            errors += "ERROR: Duplicate folder '{}' found in zip file.\n".format(folder_name)
         else:
             files[line[:-1]] = 0
         folder_count += 1
@@ -111,7 +112,7 @@ for key in files:
         file_count_freq[files[key]] += 1
     else:
         file_count_freq[files[key]] = 1
-print("\nZip file file frequency analysis...")
+print("\nFiles in ZIP frequency analysis...")
 for key, value in sorted(file_count_freq.items()):
     print( "# of files {} : {} folders (with that many files)".format(key, value))
 print("\n")
@@ -124,8 +125,8 @@ for key in slack_private_channels:
     if(key in files):
         matching += 1
     else:
-        errors += "ERROR! Private channel has no matching folder in ZIP: '{}'\n".format(key)
-print("INFO: {} of {} private channels had a matching folder in the ZIP file.\n".format(matching, len(slack_private_channels)))
+        errors += "ERROR: Private channel has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} private channels had a matching folder in the ZIP file.".format(matching, len(slack_private_channels)))
 
 # PUBLIC channels...
 matching = 0
@@ -133,8 +134,8 @@ for key in slack_public_channels:
     if(key in files):
         matching += 1
     else:
-        errors += "ERROR! Public channel has no matching folder in ZIP: '{}'\n".format(key)
-print("INFO: {} of {} public channels had a matching folder in the ZIP file.\n".format(matching, len(slack_public_channels)))
+        errors += "ERROR: Public channel has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} public channels had a matching folder in the ZIP file.".format(matching, len(slack_public_channels)))
 
 # DMs...
 matching = 0
@@ -142,8 +143,8 @@ for key in slack_dm_channels:
     if(key in files):
         matching += 1
     else:
-        errors += "ERROR! DM has no matching folder in ZIP: '{}'\n".format(key)
-print("INFO: {} of {} DMs had a matching folder in the ZIP file.\n".format(matching, len(slack_dm_channels)))
+        errors += "ERROR: DM has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} DMs had a matching folder in the ZIP file.".format(matching, len(slack_dm_channels)))
 
 # MPIMs...
 matching = 0
@@ -151,8 +152,33 @@ for key in slack_mpims_channels:
     if(key in files):
         matching += 1
     else:
-        errors += "ERROR! MPIM channel has no matching folder in ZIP: '{}'\n".format(key)
-print("INFO: {} of {} MPIM channels had a matching folder in the ZIP file.\n".format(matching, len(slack_mpims_channels)))
+        errors += "ERROR: MPIM channel has no matching folder in ZIP: '{}'\n".format(key)
+print("INFO: {} of {} MPIM channels had a matching folder in the ZIP file.".format(matching, len(slack_mpims_channels)))
+
+
+# Thirdly - let's check what folders in the zipfile are not referenced by any JSON file...
+matching = 0
+files_by_conversation_type = {}
+for key in files:
+    if(key in slack_dm_channels):
+        files_by_conversation_type[key] = "dm"
+        matching += 1
+    elif(key in slack_mpims_channels):
+        files_by_conversation_type[key] = "mpim"
+        matching += 1
+    elif(key in slack_public_channels):
+        files_by_conversation_type[key] = "public"
+        matching += 1
+    elif(key in slack_private_channels):
+        files_by_conversation_type[key] = "private"
+        matching += 1
+    else:
+        files_by_conversation_type[key] = "NOT_REFERENCED"
+        errors += "WARNING: Folder in ZIP file is not referenced by any JSON conversation: {}\n".format(key)
+
+print("INFO: {} of {}({}) folders in the zip are referenced by a conversation in JSON.".format(matching, len(files_by_conversation_type), len(files)))
+# Invert and create a dict by value, so we get a frequency plot...
+
 
 
 
@@ -165,7 +191,7 @@ print("INFO: from json meta: Private channels indexed {} channels, of {} channel
 print("INFO: from json meta: Public channels indexed {} channels, of {} channels found.".format(len(slack_public_channels), public_channel_count))
 print("INFO: from json meta: MPIM channels indexed {} channels, with {} channels found.".format(len(slack_mpims_channels), mpim_channel_count))
 print("INFO: from json meta: DMs indexed {} channels, of {} channels found.".format(len(slack_dm_channels), dm_count))
-total_channel_meta_count = private_channel_count + public_channel_count + dm_count
+total_channel_meta_count = private_channel_count + public_channel_count + dm_count + mpim_channel_count
 if( total_channel_meta_count == folder_count ):
     print("--> total folders (from zipfile): {}  |  total channels (from JSON files): {} (they match!)".format(folder_count, total_channel_meta_count))
 else:
